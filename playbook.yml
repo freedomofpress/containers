@@ -1,0 +1,31 @@
+---
+- name: Build all FPF containers.
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+  tasks:
+    # Use set_fact to freeze the lookup value, so it's the same across images
+    # and used identically on all images built.
+    - name: Set build timestamp for use as image tag.
+      set_fact:
+        build_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%d') }}"
+
+    - name: Find all container configs.
+      find:
+        paths:
+          - "{{ playbook_dir }}"
+        file_type: directory
+      register: find_container_config_results
+
+    - debug: var=find_container_config_results
+
+    - name: Set container name list as fact.
+      set_fact:
+        container_names: "{{ find_container_config_results.files|map(attribute='path')|map('basename')|list }}"
+
+    - debug: var=container_names
+
+    # Import separate task list to take advantage of `which_items` loop.
+    - include: build-image.yml
+      with_items: "{{ container_names }}"
