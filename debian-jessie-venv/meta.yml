@@ -1,0 +1,4 @@
+---
+repo: "quay.io/freedomofpress/debian-jessie-venv"
+tag: "latest"
+digest: "sha256:9b128d0907cf0d395efac39d0d26322b4746ba7dbd51cf3770abbe0d33e21f1d"
