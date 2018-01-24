@@ -21,5 +21,5 @@ else
     CONFIG_PATH=/etc/logstash/conf.d/
 fi
 
-/usr/local/bin/logstash-filter-verifier --logstash-path=$LOGSTASH_PATH/logstash \
+/usr/bin/logstash-filter-verifier --logstash-path=$LOGSTASH_PATH/logstash \
     "/etc/logstash/tests/$1" "${CONFIG_PATH}/$2"
