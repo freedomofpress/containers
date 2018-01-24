@@ -5,8 +5,9 @@
 
 - name: Build container image.
   docker_image:
-    name: "{{ container_config.repo|basename }}"
+    name: "{{ container_config.repo }}"
     force: "{{ container_config.force|default(omit) }}"
     path: "{{ container_config.repo|basename }}"
     state: present
-    tag: "{{ build_timestamp }}"
+    tag: "{{ container_config.tag }}"
+    buildargs: "{{ container_config.args|default(omit) }}"

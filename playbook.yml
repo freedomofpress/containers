@@ -3,14 +3,12 @@
   hosts: localhost
   connection: local
   gather_facts: no
-  vars:
+  vars_prompt:
+    - name: container_to_build
+      prompt: "Container name to build: "
+      private: no
+      default: all
   tasks:
-    # Use set_fact to freeze the lookup value, so it's the same across images
-    # and used identically on all images built.
-    - name: Set build timestamp for use as image tag.
-      set_fact:
-        build_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%d') }}"
-
     - name: Find all container configs.
       find:
         paths:
