@@ -8,6 +8,8 @@ RUN apk add paxctl --no-cache  && \
 
 RUN npm install http-server
 COPY src/ .
+
+RUN chown node: -R /usr/src/app
 EXPOSE 9100
 
 USER node
