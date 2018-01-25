@@ -1,0 +1,3 @@
+[submodule "es-head-pax/src"]
+	path = es-head-pax/src
+	url = git@github.com:freedomofpress/elasticsearch-head.git
