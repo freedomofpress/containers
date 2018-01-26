@@ -24,6 +24,11 @@ RUN cd /tmp && \
     echo "$LS_VERIFIER_SHA256 ls-verifier.tar.gz" | sha256sum -c - && \
     tar -C /usr/bin -xzf ls-verifier.tar.gz
 
+# This is necessary because we are re-slapping the pax flags on java
+# during the entrypoint script at run-time. The logstash user needs write
+# permissions since the container is starting up as non-root.
+# For whatever reason (be it docker version or storage driver provider), the
+# pax flags set by root above does not persist onto the running image.
 RUN chown logstash /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java && \
     chown logstash: -R /etc/logstash
 
