@@ -1,5 +1,0 @@
-#!/bin/bash
-#
-#
-#
-/usr/bin/setfattr -n user.pax.flags -v m /etc/alternatives/java
