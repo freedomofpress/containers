@@ -2,6 +2,7 @@ FROM debian:jessie
 
 LABEL maintainer="Freedom of the Press Foundation"
 
+COPY config/00redirects /etc/apt/apt.conf.d/00redirects
 RUN apt-get update &&\
     apt-get install --no-install-recommends -y\
         git gcc g++ python3 python3-dev virtualenv \
