@@ -1,0 +1,6 @@
+---
+repo: "quay.io/freedomofpress/logstash-verifier"
+tag: "alpine"
+args:
+  # 256.0.0-alpine
+  GCLOUD_HASH: "46cac9de07e621720947afd83a5d6c4a67fc6de8ce710b89f79b9d3f25e12e06"
