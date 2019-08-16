@@ -13,9 +13,12 @@ import tempfile
 import sys
 
 """
-Takes a source bucket, a backup bucket, encryption key as args. Will rsync down the source,
-tar those files up, grab the latest tar-ball from the backup bucket, if there are changes
-the local tar ball will be backed up.
+Takes a source bucket, a backup bucket, encryption key as args.
+Will rsync down the source,
+tar those files up,
+grab the latest tar-ball from the backup bucket.
+
+If you provide a service account key path, script will call out to gcloud to initialize it
 """
 
 logger = logging.getLogger(__name__)
@@ -32,7 +35,7 @@ class GCPBucketBackup(object):
         backup_bucket: str,
         encrypt_key: str,
         file_suffix: str,
-        gsutil_path="/google-cloud-sdk/bin",
+        gsutil_path: str,
     ):
 
         self.src = src_bucket
@@ -41,7 +44,9 @@ class GCPBucketBackup(object):
         self.gsutil_path = gsutil_path
         self.suffix = file_suffix
 
-    def _subprocess_debug_wrap(self, cmd: list, shellmode: bool = False) -> str:
+    def _subprocess_debug_wrap(self,
+                               cmd: list,
+                               shellmode: bool = False) -> str:
         logger.debug("Calling command {}".format(" ".join(cmd)))
         if shellmode:
             cmd = " ".join(cmd)
@@ -50,6 +55,13 @@ class GCPBucketBackup(object):
         logger.debug(copy_output)
 
         return copy_output
+
+    def initialize_svc_acct(self, acct_key_path: str) -> None:
+        """ Initilize gcloud tooling using a GCP service account key """
+        gcloud_auth_cmd = [
+            "gcloud", "auth", "activate-service-account", "--key-file",
+            acct_key_path]
+        self._subprocess_debug_wrap(gcloud_auth_cmd)
 
     def gsutil_encrypt_cp_cmd(self, src: str, dst: str) -> None:
         """ Copy a local file to a bucket with encryption """
@@ -76,7 +88,8 @@ class GCPBucketBackup(object):
         # Start out creating a temporary directory
         self.tmp_dir = tempfile.mkdtemp()
         logger.info(
-            "Created local dir {} for bucket manipulation".format(self.tmp_dir))
+            "Created local dir {}"
+            " for bucket manipulation".format(self.tmp_dir))
 
         self.rsync_cmd(self.src, self.tmp_dir)
 
@@ -93,7 +106,8 @@ class GCPBucketBackup(object):
         return tar_file_path
 
     def upload_encrypted_timestamp_file(self, upload_file: str) -> None:
-        """ Given a file path upload said file to our backup bucket. File is timestamp'd and includes file prefix. """
+        """ Given a file path upload said file to our backup bucket.
+            File is timestamp'd and includes file prefix. """
         timestamp_name = datetime.datetime.now().strftime(
             '%b-%d-%y-%X-{}.tar.gz'.format(self.suffix))
         backup_bucket_path = os.path.join(self.dst, timestamp_name)
@@ -111,7 +125,10 @@ if __name__ == "__main__":
     args.add_argument('-v', action='store_true', default=False,
                       required=False, help='Increase verbosity')
     args.add_argument('-gsutil_bin', type=str, required=False,
-                      help="Full path to gsutil binary on disk", default="/google-cloud-sdk/bin")
+                      help="Full path to gsutil binary on disk",
+                      default="/usr/bin/gsutil")
+    args.add_argument('-svc_act_key', type=str, required=False,
+                      help="Full path to a GCP service account key")
     parsed_args = args.parse_args()
 
     # Set verbose output
@@ -130,6 +147,10 @@ if __name__ == "__main__":
     backup = GCPBucketBackup(
         parsed_args.src, parsed_args.backup, encrypt_key,
         parsed_args.suffix, parsed_args.gsutil_bin)
+
+    # If a service account key is provided lets initialize gcloud first
+    if parsed_args.svc_act_key:
+        backup.initialize_svc_acct(parsed_args.svc_act_key)
 
     # Local directory filled with rsync'd files
     backup_local_dir = backup.rsync_source_bucket()
