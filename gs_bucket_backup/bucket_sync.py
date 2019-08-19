@@ -22,7 +22,7 @@ If you provide a service account key path, script will call out to gcloud to ini
 """
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
@@ -71,6 +71,7 @@ class GCPBucketBackup(object):
                            "cp",  src, dst]
 
         self._subprocess_debug_wrap(gsutil_base_cmd, True)
+        logger.info('Uploaded to encrypted bucket destination {}'.format(dst))
 
     def rsync_cmd(self, src: str, dst: str, dry: bool = False) -> None:
         """ Call gsutil rsync against two paths """
@@ -87,7 +88,7 @@ class GCPBucketBackup(object):
 
         # Start out creating a temporary directory
         self.tmp_dir = tempfile.mkdtemp()
-        logger.info(
+        logger.debug(
             "Created local dir {}"
             " for bucket manipulation".format(self.tmp_dir))
 
@@ -101,7 +102,7 @@ class GCPBucketBackup(object):
         tar = tarfile.open(tar_file_path, 'w:gz')
         tar.add(tar_dir, arcname='')
         tar.close()
-        logger.info("Created tar at {} of {}".format(tar_file_path, tar_dir))
+        logger.debug("Created tar at {} of {}".format(tar_file_path, tar_dir))
 
         return tar_file_path
 
