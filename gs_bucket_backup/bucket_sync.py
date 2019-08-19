@@ -47,7 +47,12 @@ class GCPBucketBackup(object):
     def _subprocess_debug_wrap(self,
                                cmd: list,
                                shellmode: bool = False) -> str:
-        logger.debug("Calling command {}".format(" ".join(cmd)))
+
+        # Sanitize out potential output of encryption key
+        debug_cmd_str = "Calling command {}".format(
+            " ".join(cmd)).replace(self.encrypt_key, "X"*10)
+        logger.debug(debug_cmd_str)
+
         if shellmode:
             cmd = " ".join(cmd)
         copy_output = subprocess.check_output(
