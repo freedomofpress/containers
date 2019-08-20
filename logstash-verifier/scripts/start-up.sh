@@ -5,8 +5,6 @@ set -e
 
 LOGSTASH_PATH=/usr/share/logstash/bin
 
-/sbin/paxctl -cm /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java 2> /dev/null
-
 cd /etc/logstash/conf.d/ || exit
 
 # Exclude multiline and input and output logs
