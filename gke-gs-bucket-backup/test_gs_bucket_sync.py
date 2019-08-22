@@ -1,5 +1,5 @@
 import unittest.mock
-from bucket_sync import GCPBucketBackup
+from gs_bucket_sync import GCPBucketBackup
 
 
 class TestBucketSync(object):
