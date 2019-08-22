@@ -115,7 +115,7 @@ class GCPBucketBackup(object):
         """ Given a file path upload said file to our backup bucket.
             File is timestamp'd and includes file prefix. """
         timestamp_name = datetime.datetime.now().strftime(
-            '%b-%d-%y-%X-{}.tar.gz'.format(self.suffix))
+            '%F-%R-%s-{}.tar.gz'.format(self.suffix))
         backup_bucket_path = os.path.join(self.dst, timestamp_name)
 
         self.gsutil_encrypt_cp_cmd(upload_file, backup_bucket_path)
