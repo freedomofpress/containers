@@ -1,0 +1,3 @@
+---
+repo: "quay.io/freedomofpress/circleci-docker-python3"
+tag: "buster-19.03.4"
