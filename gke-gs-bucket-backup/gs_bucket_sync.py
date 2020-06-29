@@ -55,9 +55,15 @@ class GCPBucketBackup(object):
 
         if shellmode:
             cmd = " ".join(cmd)
-        copy_output = subprocess.check_output(
-            cmd, stderr=subprocess.STDOUT, shell=shellmode).decode('ascii')
-        logger.debug(copy_output)
+
+        try:
+            copy_output = subprocess.check_output(
+                cmd, stderr=subprocess.STDOUT, shell=shellmode).decode('ascii')
+            logger.debug(copy_output)
+        except subprocess.CalledProcessError as e:
+            logger.error("command {} failed with status {}, output = {}".format(
+                e.cmd, e.returncode, e.output))
+            sys.exit(1)
 
         return copy_output
 
