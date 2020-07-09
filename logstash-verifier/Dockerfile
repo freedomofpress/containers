@@ -1,5 +1,5 @@
-ARG LS_VER
-FROM logstash:${LS_VER}
+# sha256 of 6.7.1 as of 2020-07-09
+FROM logstash@sha256:a4e3964f275dccd00f01f4536115785e1148d46be61282da316b6b6b654676a4
 
 LABEL MAINTAINER="Freedom of the Press"
 

@@ -1,5 +1,3 @@
 ---
 repo: "quay.io/freedomofpress/logstash-verifier"
 tag: "6.7.1"
-args:
-  LS_VER: "6.7.1"
