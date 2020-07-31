@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu@sha256:132f5164abac16b04d918547e4d0327bbd98a42ab33ef21d017d962cec2cb5aa
 
 LABEL maintainer="Freedom of the Press Foundation"
 
