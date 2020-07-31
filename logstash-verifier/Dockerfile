@@ -1,4 +1,4 @@
-# sha256 of logstash:6.7.2 as of 2020-07-09
+# sha256 as of 2020-07-09 for logstash:6.7.2
 FROM logstash@sha256:857d9a1f822101fe076e6e6a4a7df0426640424521e868393dac7e171baa9af5
 
 LABEL MAINTAINER="Freedom of the Press"
