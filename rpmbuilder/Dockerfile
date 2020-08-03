@@ -1,7 +1,7 @@
 FROM fedora:25
 LABEL maintainer="Freedom of the Press Foundation"
 LABEL description="RedHat tooling for building RPMs"
-ARG FEDORA_PKGR_VER
+ARG FEDORA_PKGR_VER=0.6.0.1-1.fc25
 
 
 RUN echo "${FEDORA_PKGR_VER}"

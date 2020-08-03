@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM debian@sha256:8dbb2e77422ad41836b9d39d4356ece323885b488b35b5e8c03a9c9c33e9beb4
 
 LABEL maintainer="Freedom of the Press Foundation"
 

@@ -1,5 +1,0 @@
----
-repo: "quay.io/freedomofpress/rpmbuilder"
-tag: "0.6.0.1-1.fc25"
-args:
-  FEDORA_PKGR_VER: 0.6.0.1-1.fc25
