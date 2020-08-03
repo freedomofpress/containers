@@ -5,3 +5,5 @@ RUN apt-get update && \
     apt-get install -y make curl git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+COPY codefresh-prepare /usr/local/bin

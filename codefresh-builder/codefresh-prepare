@@ -1,0 +1,46 @@
+#!/bin/sh
+
+set -e
+
+
+# Script for the "prepare" step of Codefresh builds. In the environment
+# for this step, the pipeline must set:
+#
+# - At least one of IMAGE_DIR or IMAGE_NAME
+# - DEFAULT_TAG
+#
+# We add three variables to the environment file that will be used for
+# subsequent steps:
+#
+# - IMAGE_NAME
+# - IMAGE_DIR
+# - IMAGE_TAG
+#
+# Note that cf_export does *not* set or export anything in *this* shell,
+# it just writes to the environment file, so use := here to assign
+# defaults rather than :- to evaluate to them.
+
+
+# If IMAGE_DIR is not set, we are preparing a build in the repo root.
+
+cf_export IMAGE_DIR="${IMAGE_DIR:=.}"
+
+# Use our dir as the default for IMAGE_NAME, but bail if neither was set.
+
+cf_export IMAGE_NAME="${IMAGE_NAME:=$IMAGE_DIR}"
+
+if test "$IMAGE_NAME" = .; then
+    echo "Prepare error: IMAGE_NAME or IMAGE_DIR must be set"
+    exit 1
+fi
+
+# Optionally pick up a version file in our dir as the tag.
+
+version_file="${IMAGE_DIR}/version.txt"
+cf_export IMAGE_TAG="$(cat "$version_file" || echo "$DEFAULT_TAG")"
+
+# Finally, run the prepare target if one exists.
+
+if test -n "$PREPARE_TARGET"; then
+    make "$PREPARE_TARGET"
+fi
