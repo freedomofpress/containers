@@ -28,6 +28,14 @@ ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
 
+class ChattyArgParser(argparse.ArgumentParser):
+    """ArgumentParser that prints full help instead of short usage on argument error"""
+    def error(self, message):
+        logger.error('{}: {}\n'.format(self.prog, message))
+        self.print_help(sys.stderr)
+        self.exit(2)
+
+
 class GCPBucketBackup(object):
     def __init__(
         self,
@@ -127,14 +135,40 @@ class GCPBucketBackup(object):
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser(description=__doc__)
-    args.add_argument('-v', '--verbose', action='store_true', default=False,
-                      required=False, help='Increase verbosity')
-    args.add_argument('-g', '--gsutil', type=str, required=False,
-                      help="Full path to gsutil binary on disk",
-                      default="/usr/bin/gsutil")
-    args.add_argument('-s', '--svc-acct-key', type=str, required=False,
-                      help="Full path to a GCP service account key")
+    default_src = os.environ.get("GS_BACKUP_SRC")
+    default_dest = os.environ.get("GS_BACKUP_DEST")
+    default_name = os.environ.get("GS_BACKUP_FILENAME")
+
+    encryption_key = os.environ.get("GS_ENCRYPTION_KEY")
+
+    args = ChattyArgParser(description=__doc__)
+    args.add_argument('-f', '--from-bucket', type=str,
+                      help="Source bucket URL prefix (e.g. gs://files.example.org/stuff); or set GS_BACKUP_SRC",
+                      default=default_src,
+                      required=default_src is None)
+    args.add_argument('-t', '--to-bucket', type=str,
+                      help="Destination bucket URL prefix (e.g. gs://example-org-backups/files); or set GS_BACKUP_DEST",
+                      default=default_dest,
+                      required=default_dest is None)
+    args.add_argument('-n', '--filename', type=str,
+                      help="Object name to create, will be prefixed with timestamp (e.g. stuff.tar.gz); or set GS_BACKUP_FILENAME",
+                      default=default_name,
+                      required=default_name is None)
+    args.add_argument('-e', '--encryption-key-path', type=str,
+                      help="File containing key ('CMEK') for uploaded object; or set GS_ENCRYPTION_KEY to value of key",
+                      required=encryption_key is None)
+    args.add_argument('-g', '--gsutil', type=str,
+                      help="Path to gsutil binary on disk",
+                      default="/usr/bin/gsutil",
+                      required=False)
+    args.add_argument('-s', '--svc-acct-key', type=str,
+                      help="Full path to GCP service account key",
+                      required=False)
+    args.add_argument('-v', '--verbose', action='store_true',
+                      help='Increase verbosity',
+                      default=False,
+                      required=False)
+
     parsed_args = args.parse_args()
 
     # Set verbose output
@@ -143,26 +177,19 @@ if __name__ == "__main__":
 
     logger.debug("ARGS piped in: {}".format(parsed_args))
 
-    backup_src = os.environ.get("GS_BACKUP_SRC")
-    backup_dest = os.environ.get("GS_BACKUP_DEST")
-    filename = os.environ.get("GS_BACKUP_FILENAME")
-    encrypt_key = os.environ.get("GS_ENCRYPTION_KEY")
-
-    if not all((backup_src, backup_dest, filename, encrypt_key)):
-        args.print_help()
-        print()
-        print("Required environment variables:")
-        print("  GS_BACKUP_SRC: bucket URL prefix (i.e. gs://files.example.org/stuff)")
-        print("  GS_BACKUP_DEST: bucket URL prefix (i.e. gs://example-org-backups/files)")
-        print("  GS_BACKUP_FILENAME: object name, will be prefixed with timestamp (i.e. stuff.tar.gz)")
-        print("  GS_ENCRYPTION_KEY: key used to encrypt object")
-        sys.exit(1)
+    if parsed_args.encryption_key_path is not None:
+        try:
+            with open(parsed_args.encryption_key_path) as f:
+                encryption_key = f.read()
+        except:
+            logger.error("Could not read encryption key from {}".format(parsed_args.encryption_key_path))
+            sys.exit(1)
 
     backup = GCPBucketBackup(
-        backup_src,
-        backup_dest,
-        encrypt_key,
-        filename,
+        parsed_args.from_bucket,
+        parsed_args.to_bucket,
+        encryption_key,
+        parsed_args.filename,
         parsed_args.gsutil,
     )
 
