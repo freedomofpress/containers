@@ -70,7 +70,7 @@ class GCPBucketBackup(object):
             logger.debug(copy_output)
         except subprocess.CalledProcessError as e:
             logger.error("command {} failed with status {}, output = {}".format(
-                e.cmd, e.returncode, e.output))
+                e.cmd, e.returncode, e.output.decode('utf-8')))
             sys.exit(1)
 
         return copy_output
