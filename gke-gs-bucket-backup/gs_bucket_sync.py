@@ -28,13 +28,21 @@ ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
 
+class ChattyArgParser(argparse.ArgumentParser):
+    """ArgumentParser that prints full help instead of short usage on argument error"""
+    def error(self, message):
+        logger.error('{}: {}\n'.format(self.prog, message))
+        self.print_help(sys.stderr)
+        self.exit(2)
+
+
 class GCPBucketBackup(object):
     def __init__(
         self,
         src_bucket: str,
         backup_bucket: str,
         encrypt_key: str,
-        file_suffix: str,
+        filename: str,
         gsutil_path: str,
     ):
 
@@ -42,7 +50,7 @@ class GCPBucketBackup(object):
         self.dst = backup_bucket
         self.encrypt_key = encrypt_key
         self.gsutil_path = gsutil_path
-        self.suffix = file_suffix
+        self.filename = filename
 
     def _subprocess_debug_wrap(self,
                                cmd: list,
@@ -62,7 +70,7 @@ class GCPBucketBackup(object):
             logger.debug(copy_output)
         except subprocess.CalledProcessError as e:
             logger.error("command {} failed with status {}, output = {}".format(
-                e.cmd, e.returncode, e.output))
+                e.cmd, e.returncode, e.output.decode('utf-8')))
             sys.exit(1)
 
         return copy_output
@@ -120,49 +128,74 @@ class GCPBucketBackup(object):
     def upload_encrypted_timestamp_file(self, upload_file: str) -> None:
         """ Given a file path upload said file to our backup bucket.
             File is timestamp'd and includes file prefix. """
-        timestamp_name = datetime.datetime.now().strftime(
-            '%F-%R-%s-{}.tar.gz'.format(self.suffix))
-        backup_bucket_path = os.path.join(self.dst, timestamp_name)
+        timestamp = datetime.datetime.now().strftime('%F-%R-%s')
+        backup_bucket_path = os.path.join(self.dst, '{}-{}'.format(timestamp, self.filename))
 
         self.gsutil_encrypt_cp_cmd(upload_file, backup_bucket_path)
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser(description=__doc__)
-    args.add_argument('src', type=str, help="Source bucket")
-    args.add_argument('backup', type=str, help="Backup bucket")
-    args.add_argument(
-        'suffix', type=str,
-        help="Backup suffix filename ex: $timestamp-prefix.tar.gz")
-    args.add_argument('-v', action='store_true', default=False,
-                      required=False, help='Increase verbosity')
-    args.add_argument('-gsutil_bin', type=str, required=False,
-                      help="Full path to gsutil binary on disk",
-                      default="/usr/bin/gsutil")
-    args.add_argument('-svc_act_key', type=str, required=False,
-                      help="Full path to a GCP service account key")
+    default_src = os.environ.get("GS_BACKUP_SRC")
+    default_dest = os.environ.get("GS_BACKUP_DEST")
+    default_name = os.environ.get("GS_BACKUP_FILENAME")
+
+    encryption_key = os.environ.get("GS_ENCRYPTION_KEY")
+
+    args = ChattyArgParser(description=__doc__)
+    args.add_argument('-f', '--from-bucket', type=str,
+                      help="Source bucket URL prefix (e.g. gs://files.example.org/stuff); or set GS_BACKUP_SRC",
+                      default=default_src,
+                      required=default_src is None)
+    args.add_argument('-t', '--to-bucket', type=str,
+                      help="Destination bucket URL prefix (e.g. gs://example-org-backups/files); or set GS_BACKUP_DEST",
+                      default=default_dest,
+                      required=default_dest is None)
+    args.add_argument('-n', '--filename', type=str,
+                      help="Object name to create, will be prefixed with timestamp (e.g. stuff.tar.gz); or set GS_BACKUP_FILENAME",
+                      default=default_name,
+                      required=default_name is None)
+    args.add_argument('-e', '--encryption-key-path', type=str,
+                      help="File containing key ('CMEK') for uploaded object; or set GS_ENCRYPTION_KEY to value of key",
+                      required=encryption_key is None)
+    args.add_argument('-g', '--gsutil', type=str,
+                      help="Path to gsutil binary on disk",
+                      default="/usr/bin/gsutil",
+                      required=False)
+    args.add_argument('-s', '--svc-acct-key', type=str,
+                      help="Full path to GCP service account key",
+                      required=False)
+    args.add_argument('-v', '--verbose', action='store_true',
+                      help='Increase verbosity',
+                      default=False,
+                      required=False)
+
     parsed_args = args.parse_args()
 
     # Set verbose output
-    if parsed_args.v:
+    if parsed_args.verbose:
         logger.setLevel(logging.DEBUG)
 
     logger.debug("ARGS piped in: {}".format(parsed_args))
 
-    try:
-        encrypt_key = os.environ['GBACKUP_ENV_KEY']
-    except KeyError:
-        logging.error("Must expose an env var called GBACKUP_ENV_KEY")
-        args.print_help()
-        sys.exit(1)
+    if parsed_args.encryption_key_path is not None:
+        try:
+            with open(parsed_args.encryption_key_path) as f:
+                encryption_key = f.read()
+        except:
+            logger.error("Could not read encryption key from {}".format(parsed_args.encryption_key_path))
+            sys.exit(1)
 
     backup = GCPBucketBackup(
-        parsed_args.src, parsed_args.backup, encrypt_key,
-        parsed_args.suffix, parsed_args.gsutil_bin)
+        parsed_args.from_bucket,
+        parsed_args.to_bucket,
+        encryption_key,
+        parsed_args.filename,
+        parsed_args.gsutil,
+    )
 
     # If a service account key is provided lets initialize gcloud first
-    if parsed_args.svc_act_key:
-        backup.initialize_svc_acct(parsed_args.svc_act_key)
+    if parsed_args.svc_acct_key:
+        backup.initialize_svc_acct(parsed_args.svc_acct_key)
 
     # Local directory filled with rsync'd files
     backup_local_dir = backup.rsync_source_bucket()

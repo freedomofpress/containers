@@ -7,7 +7,7 @@ class TestBucketSync(object):
         self.GENERIC_ARGS = dict(src_bucket="gs://src-bucket/dir/",
                                  backup_bucket="gs://backup-bucket/dir",
                                  encrypt_key="124124213123",
-                                 file_suffix="siteapp",
+                                 filename="siteapp.tar.gz",
                                  gsutil_path="/usr/local/bin/gsutil")
         self.gen_backup_obj = GCPBucketBackup(**self.GENERIC_ARGS)
 
