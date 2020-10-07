@@ -1,5 +1,5 @@
-# sha256 as of 2020-07-30 for buster-slim
-FROM debian@sha256:79326248a982be0b36e8280f906916fceffdd5c17a298b14446e5e72cc822fe7
+# sha256 as of 2020-10-06 for buster-slim
+FROM debian@sha256:8d81110c3f93a777e3f4053a6b18b70e4a1003655b8c2664bdf18b19043f99d9
 
 RUN apt-get update && \
     apt-get install -y make curl git && \

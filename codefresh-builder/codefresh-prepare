@@ -7,7 +7,7 @@ set -e
 # for this step, the pipeline must set:
 #
 # - At least one of IMAGE_DIR or IMAGE_NAME
-# - DEFAULT_TAG
+# - DEFAULT_TAG (can be overridden by version.txt or VERSION_FILE)
 #
 # We add three variables to the environment file that will be used for
 # subsequent steps:
@@ -36,7 +36,7 @@ fi
 
 # Optionally pick up a version file in our dir as the tag.
 
-version_file="${IMAGE_DIR}/version.txt"
+version_file="${VERSION_FILE:-${IMAGE_DIR}/version.txt}"
 cf_export IMAGE_TAG="$(cat "$version_file" || echo "$DEFAULT_TAG")"
 
 # Finally, run the prepare target if one exists.
